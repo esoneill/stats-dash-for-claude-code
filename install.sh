@@ -14,7 +14,11 @@ cp "$SCRIPT_DIR/statusline.py" "$DEST_FILE"
 chmod +x "$DEST_FILE"
 echo "  Copied statusline.py -> $DEST_FILE"
 
-# 2. Merge statusLine.command into settings.json
+# 2. Clear format-sensitive caches so updated formats take effect immediately
+rm -f /tmp/ccode-dashboard/weather /tmp/ccode-dashboard/ratelimit 2>/dev/null || true
+echo "  Cleared statusline caches"
+
+# 3. Merge statusLine.command into settings.json
 python3 -c "
 import json, pathlib, sys
 

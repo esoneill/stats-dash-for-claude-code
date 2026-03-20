@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-03-20
+
 ### Changed
 
 - Switched weather provider from wttr.in to Open-Meteo API (free, no API key, more reliable)
@@ -21,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `_format_countdown()` helper for compact ISO 8601 → countdown formatting
 - "Skills used in session" tracking via hooks (future feature)
+
+### Fixed
+
+- Installer now clears format-sensitive caches (weather, ratelimit) on update to prevent stale data
 
 ## [0.1.0] - 2026-03-18
 
