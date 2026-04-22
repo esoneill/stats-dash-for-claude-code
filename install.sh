@@ -29,6 +29,7 @@ else:
     settings = {}
 
 settings['statusLine'] = {
+    'type': 'command',
     'command': 'python3 $DEST_FILE'
 }
 

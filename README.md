@@ -8,7 +8,7 @@ A Claude Code statusline dashboard that renders an emoji-rich single-line status
 
 ## Prerequisites
 
-- macOS
+- macOS or Linux
 - Python 3.6+
 - Claude Code CLI
 
@@ -36,7 +36,7 @@ Segments that fail to load are silently omitted.
 
 ## Privacy
 
-- **Rate limits**: The rate limit segment reads your Claude Code OAuth credentials from the macOS Keychain to query the Anthropic usage API. No credentials are logged or transmitted elsewhere.
+- **Rate limits**: The rate limit segment reads your Claude Code OAuth credentials to query the Anthropic usage API. On macOS these are read from the Keychain via the `security` CLI, with a fallback to `~/.claude/.credentials.json` if Keychain access fails. On Linux they are read from `~/.claude/.credentials.json` (where Claude Code stores them as plaintext JSON). No credentials are logged or transmitted elsewhere.
 - **Weather**: The weather segment uses IP-based geolocation (via [ip-api.com](http://ip-api.com)) to determine your approximate location for weather data from [Open-Meteo](https://open-meteo.com/). Location coordinates are cached locally in `/tmp/ccode-dashboard/`.
 
 ## Customization

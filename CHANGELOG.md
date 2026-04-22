@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-22
+
+### Fixed
+
+- Installer now writes the required `type: "command"` field in `settings.json`, fixing "Invalid settings: statusLine" schema errors on fresh installs (previously severe enough to block Claude Code from loading)
+- Rate limit segment now works on Linux by reading `~/.claude/.credentials.json` when the macOS `security` CLI is unavailable; added macOS fallback to the same path when Keychain access fails
+
+### Changed
+
+- Bumped plugin User-Agent to `ccode-dashboard/0.1.2` (used for weather and geolocation requests)
+
 ## [0.1.1] - 2026-03-20
 
 ### Changed

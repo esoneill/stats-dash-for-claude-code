@@ -119,7 +119,7 @@ def _get_location():
         return float(parts[0]), float(parts[1])
     req = urllib.request.Request(
         "http://ip-api.com/json/?fields=lat,lon",
-        headers={"User-Agent": "ccode-dashboard/0.1"},
+        headers={"User-Agent": "ccode-dashboard/0.1.2"},
     )
     with urllib.request.urlopen(req, timeout=5) as resp:
         data = json.loads(resp.read().decode())
@@ -140,7 +140,7 @@ def segment_weather():
             f"&current=temperature_2m,weather_code"
             f"&temperature_unit=fahrenheit"
         )
-        req = urllib.request.Request(url, headers={"User-Agent": "ccode-dashboard/0.1"})
+        req = urllib.request.Request(url, headers={"User-Agent": "ccode-dashboard/0.1.2"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read().decode())
         current = data["current"]
@@ -179,22 +179,45 @@ def _format_countdown(resets_at_str):
     except Exception:
         return None
 
+def _get_oauth_token():
+    """Return the Claude Code OAuth access token, or None if unavailable.
+
+    macOS: Keychain via `security`, falling back to ~/.claude/.credentials.json.
+    Linux: ~/.claude/.credentials.json (plaintext JSON written by Claude Code).
+    """
+    if sys.platform == "darwin":
+        try:
+            result = subprocess.run(
+                ["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+                capture_output=True, text=True, timeout=3,
+            )
+            if result.returncode == 0:
+                creds = json.loads(result.stdout.strip())
+                tok = creds.get("claudeAiOauth", {}).get("accessToken")
+                if tok:
+                    return tok
+        except Exception:
+            pass
+
+    try:
+        cred_path = Path.home() / ".claude" / ".credentials.json"
+        if cred_path.exists():
+            creds = json.loads(cred_path.read_text())
+            tok = creds.get("claudeAiOauth", {}).get("accessToken")
+            if tok:
+                return tok
+    except Exception:
+        pass
+
+    return None
+
 def segment_ratelimit():
     cached = read_cache("ratelimit", RATELIMIT_TTL)
     if cached:
         return cached
 
     try:
-        # Get OAuth token from macOS Keychain
-        result = subprocess.run(
-            ["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
-            capture_output=True, text=True, timeout=3,
-        )
-        if result.returncode != 0:
-            return None
-
-        creds = json.loads(result.stdout.strip())
-        token = creds.get("claudeAiOauth", {}).get("accessToken")
+        token = _get_oauth_token()
         if not token:
             return None
 
