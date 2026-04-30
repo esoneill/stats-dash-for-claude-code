@@ -81,6 +81,8 @@ def segment_model(data):
     family = display.split()[0] if display else "?"
     return f"\U0001f916 {family}"
 
+MAX_CWD_PARTS = 3
+
 def segment_cwd(data):
     workspace = data.get("workspace") or {}
     path = workspace.get("project_dir") or data.get("cwd")
@@ -93,6 +95,25 @@ def segment_cwd(data):
         display = "~" + path[len(home):]
     else:
         display = path
+
+    # Cap nesting at the last MAX_CWD_PARTS components, preserving the anchor.
+    if display.startswith("~/"):
+        anchor, rest = "~", display[2:]
+    elif display.startswith("/"):
+        anchor, rest = "/", display[1:]
+    else:
+        anchor, rest = "", display
+    parts = rest.split(os.sep) if rest else []
+    if len(parts) > MAX_CWD_PARTS:
+        parts = ["…"] + parts[-MAX_CWD_PARTS:]
+    if anchor and parts:
+        join = "" if anchor == "/" else "/"
+        display = anchor + join + os.sep.join(parts)
+    elif anchor:
+        display = anchor
+    else:
+        display = os.sep.join(parts)
+
     return f"\U0001f4c1 {display}"
 
 WMO_WEATHER_CODES = {

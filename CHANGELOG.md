@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `📁` cwd segment now caps display at the last 3 path components, prefixing with `…` when truncated (e.g. `~/code/work/2026/q2/big-project` → `~/…/2026/q2/big-project`). Anchors (`~`, `/`) are preserved. Paths already ≤ 3 components are unchanged.
+
 ## [1.0.0] - 2026-04-30
 
 ### Added
