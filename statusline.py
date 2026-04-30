@@ -81,6 +81,20 @@ def segment_model(data):
     family = display.split()[0] if display else "?"
     return f"\U0001f916 {family}"
 
+def segment_cwd(data):
+    workspace = data.get("workspace") or {}
+    path = workspace.get("project_dir") or data.get("cwd")
+    if not path:
+        return None
+    home = str(Path.home())
+    if path == home:
+        display = "~"
+    elif path.startswith(home + os.sep):
+        display = "~" + path[len(home):]
+    else:
+        display = path
+    return f"\U0001f4c1 {display}"
+
 WMO_WEATHER_CODES = {
     0: ("☀️", "Clear"),
     1: ("⛅", "Mostly clear"),
@@ -259,6 +273,82 @@ def segment_ratelimit():
     except Exception:
         return None
 
+# ── Segment registry & config ───────────────────────────────────────────────
+
+# (name, render_fn, takes_data) — list order is the rendered order.
+SEGMENT_REGISTRY = [
+    ("cwd",       segment_cwd,       True),
+    ("context",   segment_context,   True),
+    ("cost",      segment_cost,      True),
+    ("time",      segment_time,      True),
+    ("model",     segment_model,     True),
+    ("weather",   segment_weather,   False),
+    ("diff",      segment_diff,      True),
+    ("ratelimit", segment_ratelimit, False),
+]
+
+CONFIG_PATH = Path.home() / ".claude" / "statusline" / "config.json"
+
+def _load_config():
+    try:
+        if CONFIG_PATH.exists():
+            return json.loads(CONFIG_PATH.read_text())
+    except Exception:
+        pass
+    return {}
+
+def _save_config(cfg):
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CONFIG_PATH.write_text(json.dumps(cfg, indent=2) + "\n")
+
+def _disabled_set():
+    return set(_load_config().get("disabled", []))
+
+def _config_cli(argv):
+    valid = [name for name, _, _ in SEGMENT_REGISTRY]
+    cmd = argv[0] if argv else "list"
+
+    if cmd in ("list", "status"):
+        disabled = _disabled_set()
+        for name, _, _ in SEGMENT_REGISTRY:
+            mark = "off" if name in disabled else "on "
+            print(f"  [{mark}] {name}")
+        return 0
+
+    if cmd == "reset":
+        if CONFIG_PATH.exists():
+            CONFIG_PATH.unlink()
+        print("statusline config reset (all segments enabled)")
+        return 0
+
+    if cmd in ("enable", "disable", "toggle"):
+        if len(argv) < 2:
+            print(f"usage: statusline.py config {cmd} <segment>", file=sys.stderr)
+            print(f"valid segments: {', '.join(valid)}", file=sys.stderr)
+            return 2
+        name = argv[1]
+        if name not in valid:
+            print(f"unknown segment '{name}'. valid: {', '.join(valid)}", file=sys.stderr)
+            return 2
+        cfg = _load_config()
+        disabled = set(cfg.get("disabled", []))
+        if cmd == "enable":
+            disabled.discard(name); action = "enabled"
+        elif cmd == "disable":
+            disabled.add(name); action = "disabled"
+        else:
+            if name in disabled:
+                disabled.discard(name); action = "enabled"
+            else:
+                disabled.add(name); action = "disabled"
+        cfg["disabled"] = sorted(disabled)
+        _save_config(cfg)
+        print(f"{name} {action}")
+        return 0
+
+    print(f"unknown subcommand '{cmd}'. valid: list, enable, disable, toggle, reset", file=sys.stderr)
+    return 2
+
 # ── Main ────────────────────────────────────────────────────────────────────
 
 def main():
@@ -268,40 +358,17 @@ def main():
     except Exception:
         data = {}
 
+    disabled = _disabled_set()
     segments = []
-
-    # JSON-backed segments (require data)
-    for fn in [segment_context, segment_cost, segment_time, segment_model]:
+    for name, fn, takes_data in SEGMENT_REGISTRY:
+        if name in disabled:
+            continue
         try:
-            result = fn(data)
+            result = fn(data) if takes_data else fn()
             if result is not None:
                 segments.append(result)
         except Exception:
             pass
-
-    # External segments (no data dependency)
-    try:
-        w = segment_weather()
-        if w:
-            segments.append(w)
-    except Exception:
-        pass
-
-    # Diff segment (requires data)
-    try:
-        d = segment_diff(data)
-        if d:
-            segments.append(d)
-    except Exception:
-        pass
-
-    # Rate limit segment (external)
-    try:
-        r = segment_ratelimit()
-        if r:
-            segments.append(r)
-    except Exception:
-        pass
 
     if segments:
         print(SEP.join(segments))
@@ -310,4 +377,6 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "config":
+        sys.exit(_config_cli(sys.argv[2:]))
     main()
