@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Working-directory segment (`📁`) showing the project folder Claude was opened in, tilde-shortened (e.g. `📁 ~/Documents/Rando Projects/CCode Dashboard Plugin`). Reads `workspace.project_dir` from the statusline JSON, falling back to `cwd` for older Claude Code clients. Rendered as the leftmost segment.
+- Per-segment on/off toggle. Each segment now has a stable name (`cwd`, `context`, `cost`, `time`, `model`, `weather`, `diff`, `ratelimit`) and can be individually disabled.
+  - `/statusline` slash command (installed to `~/.claude/commands/`) with `list`, `enable <name>`, `disable <name>`, `toggle <name>`, and `reset` subcommands.
+  - Equivalent CLI: `python3 ~/.claude/statusline/statusline.py config <subcommand>`.
+  - State persisted at `~/.claude/statusline/config.json` using an overrides-only schema (`{"disabled": [...]}`), so future segments default to enabled.
+
+### Changed
+
+- Refactored render loop in `main()` to iterate a single `SEGMENT_REGISTRY`, replacing four separate try/except blocks with one. Render order is now defined by registry list order.
+
+### Fixed
+
+- Installer no longer aborts under `set -e` when `commands/` exists but contains no `.md` files; the slash-command copy step is now guarded by a glob match check.
+- Installer's final format hint now mentions the new `cwd` segment.
+
 ## [0.1.2] - 2026-04-22
 
 ### Fixed
