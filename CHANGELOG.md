@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-04-30
+
 ### Added
 
 - Working-directory segment (`📁`) showing the project folder Claude was opened in, tilde-shortened (e.g. `📁 ~/Documents/Rando Projects/CCode Dashboard Plugin`). Reads `workspace.project_dir` from the statusline JSON, falling back to `cwd` for older Claude Code clients. Rendered as the leftmost segment.
